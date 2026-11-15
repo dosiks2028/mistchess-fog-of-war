@@ -1,0 +1,23 @@
+@inherits LayoutComponentBase
+
+<div class="site-shell">
+    <header class="site-header">
+        <a class="brand" href="/" aria-label="MistChess — главная">
+            <span class="brand-mark">M<span>♞</span></span>
+            <span class="brand-name">MIST<span>CHESS</span></span>
+        </a>
+        <NavMenu />
+        <a class="header-cta" href="/">Играть <span>↗</span></a>
+    </header>
+    <main class="site-main">@Body</main>
+    <footer class="site-footer">
+        <span>MistChess · Fog of War chess</span>
+        <span>Создано на C# и .NET 8</span>
+    </footer>
+</div>
+
+<div id="blazor-error-ui">
+    <span>Возникла ошибка подключения. Перезагрузите страницу.</span>
+    <a href="" class="reload">Перезагрузить</a>
+    <button type="button" class="dismiss" aria-label="Закрыть">×</button>
+</div>

@@ -1,0 +1,74 @@
+@using System.Collections.Immutable
+@using MistChess.Core.Domain
+@using MistChess.Core.Engine
+
+<div class="chessboard" role="grid" aria-label="Шахматная доска">
+    @for (var row = 0; row < 8; row++)
+    {
+        var rank = Orientation == PlayerColor.White ? 7 - row : row;
+        @for (var column = 0; column < 8; column++)
+        {
+            var file = Orientation == PlayerColor.White ? column : 7 - column;
+            var position = new Position(file, rank);
+            var visibility = Board?.At(position) ?? SquareVisibility.HiddenSquare;
+            var piece = visibility is SquareVisibility.Visible { Piece: { } visiblePiece } ? visiblePiece : null;
+            var hidden = visibility is SquareVisibility.Hidden;
+            var ripple = visibility is SquareVisibility.AcousticRipple;
+            var selected = Selected == position;
+            var target = LegalTargets.Contains(position);
+            var isLight = (file + rank) % 2 == 0;
+            var accessible = hidden ? $"{position.Algebraic}, скрыто туманом" : ripple ? $"{position.Algebraic}, звук шага" : $"{position.Algebraic}, {PieceName(piece)}";
+            <button type="button"
+                    class="square @(isLight ? "square-light" : "square-dark") @(hidden ? "square-hidden" : "") @(ripple ? "square-ripple" : "") @(selected ? "square-selected" : "") @(target ? "square-target" : "")"
+                    role="gridcell"
+                    aria-label="@accessible"
+                    aria-pressed="@selected"
+                    title="@accessible"
+                    disabled="@(!CanInteract)"
+                    @onclick="() => OnSquareClicked.InvokeAsync(position)">
+                @if (piece is not null)
+                {
+                    <span class="piece @(piece.Color == PlayerColor.White ? "piece-white" : "piece-black")" aria-hidden="true">@Glyph(piece.Kind)</span>
+                }
+                else if (ripple)
+                {
+                    <span class="ripple-mark" aria-hidden="true">≈</span>
+                }
+                @if (column == 0)
+                {
+                    <span class="rank-coordinate" aria-hidden="true">@(rank + 1)</span>
+                }
+                @if (row == 7)
+                {
+                    <span class="file-coordinate" aria-hidden="true">@((char)('a' + file))</span>
+                }
+                @if (target)
+                {
+                    <span class="target-mark" aria-hidden="true"></span>
+                }
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public MaskedBoardState? Board { get; set; }
+    [Parameter] public Position? Selected { get; set; }
+    [Parameter] public ImmutableHashSet<Position> LegalTargets { get; set; } = ImmutableHashSet<Position>.Empty;
+    [Parameter] public PlayerColor Orientation { get; set; } = PlayerColor.White;
+    [Parameter] public bool CanInteract { get; set; }
+    [Parameter] public EventCallback<Position> OnSquareClicked { get; set; }
+
+    private static string Glyph(PieceKind kind) => kind switch
+    {
+        PieceKind.King => "♚",
+        PieceKind.Queen => "♛",
+        PieceKind.Rook => "♜",
+        PieceKind.Bishop => "♝",
+        PieceKind.Knight => "♞",
+        PieceKind.Pawn => "♟",
+        _ => "?"
+    };
+
+    private static string PieceName(Piece? piece) => piece is null ? "пусто" : $"{piece.Color switch { PlayerColor.White => "белые", _ => "чёрные" }} {piece.Kind switch { PieceKind.King => "король", PieceKind.Queen => "ферзь", PieceKind.Rook => "ладья", PieceKind.Bishop => "слон", PieceKind.Knight => "конь", _ => "пешка" }}";
+}

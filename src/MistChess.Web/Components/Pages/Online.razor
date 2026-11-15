@@ -1,0 +1,159 @@
+@page "/online"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject OnlineGameClient Client
+
+<PageTitle>Онлайн-партия — MistChess</PageTitle>
+
+<div class="subpage game-page">
+    <section class="hero-row">
+        <div>
+            <p class="eyebrow">ИГРА ПО СЕТИ</p>
+            <h1>Одна доска. Два взгляда.</h1>
+            <p class="hero-copy">Создайте комнату и отправьте код сопернику. Позиция проверяется игровым сервером.</p>
+        </div>
+        <div class="hero-stat"><span class="stat-dot"></span><span>Обновления в реальном времени</span></div>
+    </section>
+
+    @if (Client.View is null)
+    {
+        <section class="online-entry panel-card">
+            <div class="entry-grid">
+                <div>
+                    <p class="eyebrow">ПОДГОТОВКА</p>
+                    <h2>Подключиться к партии</h2>
+                    <p class="muted-copy">Имя показывается только сопернику в вашей комнате.</p>
+                    <label class="field-label" for="player-name">Ваше имя</label>
+                    <input id="player-name" class="form-control mist-select" maxlength="24" @bind="Client.PlayerName" />
+                    <label class="field-label" for="game-variant">Вариант игры</label>
+                    <select id="game-variant" class="form-control mist-select" @bind="_variant">
+                        <option value="FogOfWar">Fog of War</option>
+                        <option value="ClassicChess">Классические шахматы</option>
+                    </select>
+                    <button class="primary-button" type="button" @onclick="CreateRoom">Создать комнату <span>↗</span></button>
+                </div>
+                <div class="join-card">
+                    <p class="eyebrow">ЕСТЬ КОД?</p>
+                    <h3>Войти в комнату</h3>
+                    <label class="field-label" for="room-code">Код приглашения</label>
+                    <input id="room-code" class="form-control mist-select room-code-input" maxlength="8" autocomplete="off" @bind="_roomCode" @bind:event="oninput" />
+                    <button class="secondary-button full-button" type="button" @onclick="JoinRoom">Присоединиться</button>
+                    <p class="help-copy">Код состоит из 8 символов. Похожих букв и цифр в нём нет.</p>
+                </div>
+            </div>
+            <p class="inline-message" role="status">@Client.Message</p>
+        </section>
+    }
+    else if (Client.View is { } view && Client.DisplayBoard is { } board)
+    {
+        <div class="online-game-layout">
+            <section class="board-panel">
+                <div class="board-topline">
+                    <div>
+                        <span class="eyebrow">КОМНАТА · @view.Code</span>
+                        <h2>@view.Status</h2>
+                    </div>
+                    <button type="button" class="text-button leave-button" @onclick="Client.LeaveRoom">Покинуть</button>
+                </div>
+                <div class="online-players">
+                    <span class="player-pill @(view.Turn == PlayerColor.White ? "player-active" : "")">♔ @view.WhiteName <small>белые</small></span>
+                    <span class="vs-label">vs</span>
+                    <span class="player-pill @(view.Turn == PlayerColor.Black ? "player-active" : "")">♚ @(view.BlackName ?? "Ожидаем соперника") <small>чёрные</small></span>
+                </div>
+                <ChessBoard Board="board" Selected="_selected" Orientation="@(Client.Seat ?? PlayerColor.White)" CanInteract="CanMove" OnSquareClicked="OnSquareClicked" />
+                <div class="board-caption"><span class="status-indicator"></span><span>@Client.Message</span></div>
+            </section>
+            <aside class="control-panel online-info-panel">
+                <div class="panel-section">
+                    <p class="eyebrow">КОД ПРИГЛАШЕНИЯ</p>
+                    <div class="invite-code">@view.Code</div>
+                    <p class="help-copy">Отправьте код сопернику. Он автоматически присоединится белыми или чёрными в зависимости от места.</p>
+                </div>
+                <div class="panel-section">
+                    <p class="eyebrow">ВАША СТОРОНА</p>
+                    <h3>@(view.MyColor == PlayerColor.White ? "Белые" : "Чёрные")</h3>
+                    <p class="muted-copy">Соперник @(view.IsOpponentConnected ? "в сети" : "не подключён"). Ходов сыграно: @view.MoveCount.</p>
+                </div>
+                <div class="panel-section privacy-note">
+                    <span class="feature-symbol">◉</span>
+                    <div><h3>Раздельный обзор</h3><p>Каждому игроку отправляются только клетки, видимые с его стороны доски.</p></div>
+                </div>
+            </aside>
+        </div>
+        <p class="inline-message" role="status">@Client.Message</p>
+    }
+</div>
+
+@if (_promotionFrom is not null)
+{
+    <PromotionDialog OnChoose="ChoosePromotion" OnCancel="CancelPromotion" />
+}
+
+@code {
+    private string _roomCode = string.Empty;
+    private GameVariant _variant = GameVariant.FogOfWar;
+    private Position? _selected;
+    private Position? _promotionFrom;
+    private Position? _promotionTo;
+    private bool CanMove => Client.View is { } view && !view.IsFinished && view.BlackName is not null && view.Turn == view.MyColor;
+
+    protected override void OnInitialized() => Client.Changed += OnClientChanged;
+
+    private void CreateRoom() => Client.CreateRoom(_variant);
+    private void JoinRoom() => Client.JoinRoom(_roomCode);
+
+    private void OnSquareClicked(Position position)
+    {
+        if (!CanMove || Client.DisplayBoard is not { } board) return;
+        if (_selected is null)
+        {
+            if (board.At(position) is SquareVisibility.Visible { Piece: { } piece } && piece.Color == Client.Seat)
+            {
+                _selected = position;
+            }
+            return;
+        }
+
+        if (_selected == position)
+        {
+            _selected = null;
+            return;
+        }
+
+        if (board.At(position) is SquareVisibility.Visible { Piece: { } ownPiece } && ownPiece.Color == Client.Seat)
+        {
+            _selected = position;
+            return;
+        }
+
+        var result = Client.TryMove(_selected.Value, position);
+        if (result.NeedsPromotion)
+        {
+            _promotionFrom = _selected;
+            _promotionTo = position;
+        }
+        else if (result.Success)
+        {
+            _selected = null;
+        }
+    }
+
+    private void ChoosePromotion(PieceKind kind)
+    {
+        if (_promotionFrom is { } from && _promotionTo is { } to && Client.TryMove(from, to, kind).Success)
+        {
+            _selected = null;
+            _promotionFrom = null;
+            _promotionTo = null;
+        }
+    }
+
+    private void CancelPromotion()
+    {
+        _promotionFrom = null;
+        _promotionTo = null;
+    }
+
+    private void OnClientChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => Client.Changed -= OnClientChanged;
+}

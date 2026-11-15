@@ -1,132 +1,98 @@
-# MistChess
+# MistChess — Fog of War Chess
 
-MistChess is a .NET 8 functional core for Fog of War chess. Phase 1 implements the immutable game model, move rules, hidden-information projection, event replay, and five bot profiles. The Blazor interface and multiplayer host are not part of this phase.
+**MistChess** is a playable chess web application built with C# and .NET 8. It combines an immutable functional game engine with hidden-information chess, five bot profiles, local two-player play, and browser-based online rooms.
 
-## Projects
+**Authors:** Sansyzbay Dossymzhan and Meiram Dossym
 
-- `MistChess.Core` contains the immutable domain, `Result<TValue, TError>` and `Option<T>`, legal move generation, game adjudication, fog projection, and bot search.
-- `MistChess.Tests` contains xUnit cases for chess rules, immutability, replay, fog privacy, and bot move selection.
+## Play locally
 
-## Run
+Install the .NET 8 SDK, clone this repository, then run:
 
-Requires the .NET 8 SDK.
+```powershell
+dotnet run --project src/MistChess.Web
+```
+
+Open the local URL printed in the terminal (the included HTTP profile uses `http://localhost:5254`). The home screen supports games against all five bots and two players sharing one screen. Use the **Online** page to create a room, send the eight-character code to another player, and play through the Blazor Interactive Server connection. The repository is public, but it does not currently have a public hosted game URL; run the app locally to play.
+
+Run the automated test suite with:
 
 ```powershell
 dotnet test MistChess.sln
 ```
 
-To use the engine from another .NET project, reference `src/MistChess.Core/MistChess.Core.csproj`, start from `BoardState.Initial`, and call `GameEngine.ApplyMove` with a move from `MoveGenerator.GetLegalMoves`.
+## Game modes
 
-## Game variants and rules
+- **Fog of War:** each player sees their own pieces, the squares those pieces attack, and a 5×5 King Radar area around their king. Nearby opponent movement can leave an acoustic ripple without exposing the moved piece. Victory is achieved by capturing the opposing king.
+- **Classic Chess:** full board visibility, check and checkmate, castling restrictions, stalemate, and draw rules.
+- **Play a bot:** choose one of five profiles and play as White or Black. Bot calculation runs away from the UI thread; undo removes a full human/bot exchange when available.
+- **Two players, one screen:** the displayed Fog of War perspective follows the player whose turn it is.
+- **Online rooms:** room codes seat the creator as White and the joiner as Black. The server validates turns and legal moves. The online response contains a per-player masked projection, not the hidden pieces or the legal move list. Rooms are held in memory and are lost when the host restarts.
+- **Replay:** step through the move history from White Fog, Black Fog, or omniscient perspective.
 
-`BoardState.Initial` starts in `GameVariant.FogOfWar`. In this mode, kings may move into attacked squares and castling may pass through or end on attacked squares. The game ends when a king is captured. `GameVariant.ClassicChess` applies king-safety rules, checkmate, stalemate, the fifty-move rule, and insufficient-material draws.
+All six piece types are supported, including captures, castling, en passant, and promotion to queen, rook, bishop, or knight.
 
-Both variants support pawn, knight, bishop, rook, queen, and king movement, captures, en passant, castling, and promotion to queen, rook, bishop, or knight. Castling rights are removed when a king or home rook moves or a home rook is captured.
-
-## Functional architecture
+## Architecture
 
 ```mermaid
 flowchart LR
-    Caller[Blazor / SignalR host or test] -->|immutable BoardState + Move| Core[MistChess.Core]
-    Core --> Rules[MoveGenerator and GameEngine]
+    Browser[Blazor Web App] -->|interactive UI over SignalR| Session[GameSessionStore / OnlineGameClient]
+    Session -->|immutable board + attempted move| Core[MistChess.Core]
+    Core --> Rules[MoveGenerator + GameEngine]
     Core --> Fog[FogEngine per-viewer projection]
-    Core --> Bots[Five BotProfiles and alpha-beta search]
-    Rules -->|Result of new BoardState or domain error| Caller
-    Fog -->|MaskedBoardState with hidden pieces stripped| Caller
-    Rules -->|ImmutableList move history| Replay[Pure event replay]
-    Replay -->|Historical BoardState| Caller
+    Core --> Bots[Five fog-aware bot profiles]
+    Rules -->|Result of BoardState or domain error| Session
+    Fog -->|MaskedBoardState| Browser
+    Registry[OnlineGameRegistry] -->|separate masked views| OnlineA[Player White]
+    Registry -->|separate masked views| OnlineB[Player Black]
+    Registry -->|authoritative legal-move validation| Core
+    Rules -->|immutable move history| Replay[GameEngine.Replay]
 ```
 
-The domain has no I/O or mutable game state. A future host can use the same pure projection independently for White and Black before sending any board state to a client.
+`MistChess.Core` contains the domain model, `Result<TValue,TError>`, move generation, game adjudication, fog projection, replay, and bot search. It performs no I/O. The web project owns the user interface and multiplayer room lifecycle. Each online board DTO contains coordinates and only the viewer's visible pieces; the server does not send full board state or legal move lists to clients.
 
-## Fog projection and privacy
+## Fog and replay features
 
-`FogEngine.ProjectBoard` returns all 64 coordinates. A hidden square contains only `SquareVisibility.Hidden`; it does not contain the actual piece. The available composable `FogRule` values are:
+- **King Radar:** reveals the five-by-five area around the player's king.
+- **Acoustic Footsteps:** marks the destination of a nearby opponent move while keeping its identity hidden.
+- **Time-Travel 3-Layer Replay:** browse the position history through White Fog, Black Fog, or full-board perspectives.
+- **Server-side projection:** the room service validates each move against the authoritative board and builds a separate masked projection for each participant.
 
-- `ClassicAttackVision` reveals squares reachable through the pieces’ movement and attack patterns.
-- `KingRadarVision` reveals the five-by-five area centered on each friendly king.
-- `AcousticFootsteps` marks a nearby opponent move with a ripple and suppresses the moved piece’s identity.
+## Bot profiles
 
-`FogRules.Standard` combines those layers. `GameEngine.Replay` folds a move sequence from an initial position and can reconstruct a historical prefix. Each successful move returns a new immutable board and appends to immutable history.
-
-## Bots
-
-Every bot receives a `MaskedBoardState` and a server-supplied legal root move list. Search simulation uses only pieces present in that observation. The authoritative host must still validate and apply the chosen root move to the truth board.
-
-| Bot | Search depth | Policy |
+| Bot | Search depth | Style |
 | --- | ---: | --- |
-| Mist Walker | 1 | Seeded variety with a visible-capture bias |
-| Zabuza’s Gambit | 1 | Material, pawn advancement, aggression, and explored vision |
-| Dementor’s Fork | 2 | Minimax with visible fork and coordination scoring |
-| Gaster’s Shadow | 3 | Minimax with a probability distribution over hidden king locations |
-| Deep Fog | 4 | Alpha-beta pruning with immutable Zobrist-style transposition memoization |
+| Mist Walker | 1 | Varied novice with a visible-capture bias |
+| Zabuza’s Gambit | 1 | Aggressive advancement and explored vision |
+| Dementor’s Fork | 2 | Tactical search for visible forks |
+| Gaster’s Shadow | 3 | Hidden-king probability estimates |
+| Deep Fog | 4 | Alpha-beta search with transposition memoization |
+
+## Verification
+
+The xUnit suite covers chess rules, immutable updates, replay steps, fog masking, bot choices, and the online room service. Registry tests verify room seating, wrong-turn rejection, legal moves, and that an unseen piece remains absent from a player's projected board. The latest run on .NET SDK 8.0.428 passed all 67 tests.
+
+A manual browser smoke check also completed a bot game move and a two-player online game in separate browser sessions. A 390 px mobile viewport had no horizontal overflow. This is a focused smoke check, not a full cross-browser/device matrix or a code-coverage measurement. Run the automated suite with `dotnet test MistChess.sln`.
+
+The app includes a `/health` endpoint for a basic host availability check. The provided room registry is an in-memory demonstration suitable for a single server process; a public production deployment would need persistent room storage, abuse controls, and an agreed hosting environment.
+
+## Defense
+
+The five-slide English presentation covers the aim, technology comparison, architecture, practical value, and method/test results. The [English defense guide](docs/DEFENSE_GUIDE_EN.md) contains a timed demo sequence, technical questions to rehearse, and deployment limitations to state accurately.
+
+## Project structure
+
+```text
+src/
+  MistChess.Core/     Immutable rules, fog engine, functional result, five bots
+  MistChess.Web/      Responsive Blazor UI and authoritative online rooms
+tests/
+  MistChess.Tests/    Core and online-service unit tests
+```
 
 ## Five-slide presentation outline
 
-### Slide 1 — MistChess: aim and goals
-
-**Aim:** Build a Fog of War chess engine that demonstrates functional programming in C# while protecting hidden board state.
-
-**Goals:** Model chess data immutably; implement move validation and game variants; project a separate board view for each player; add five fog-aware bot profiles; verify behavior with automated tests.
-
-**Plan:** Functional core → fog and bot logic → automated verification → Blazor/SignalR host in a later phase.
-
-### Slide 2 — Technology analysis and comparison
-
-Chess.com documents a Fog of War variant where players see their own pieces and reachable squares, and win by capturing the opposing king. Its analysis board supports moving through positions for study. MistChess builds on that baseline with additional core rules and privacy features. The comparison below is limited to those public descriptions.
-
-| Feature | MistChess Phase 1 | Chess.com public documentation |
-| --- | --- | --- |
-| Fog of War visibility and king capture | Implemented in the core | Documented as a playable variant |
-| King Radar | Implemented as a composable vision rule | Not described in the cited Fog of War rules |
-| Acoustic Footsteps | Implemented as a ripple that hides piece identity | Not described in the cited Fog of War rules |
-| Time-Travel 3-Layer Replay (White fog / Black fog / omniscient) | All three replay projections are implemented in the core; no replay UI yet | Move navigation and analysis are documented; a three-layer fog replay is not described in the cited help article |
-| Server-Side Anti-Cheat Projection | Per-viewer masking exists in the core; no SignalR host yet | The cited rules describe player visibility, not server/network architecture |
-
-Sources: [Chess.com Fog of War rules](https://support.chess.com/en/articles/8708650-what-is-fog-of-war-chess), [Chess.com Analysis board](https://support.chess.com/en/articles/8583825-how-do-i-use-the-analysis-board).
-
-### Slide 3 — Architecture
-
-```mermaid
-flowchart TB
-    subgraph Shell[Imperative shell — later web phase]
-        UI[Blazor client]
-        Hub[SignalR GameHub]
-        UI <--> Hub
-    end
-    subgraph Core[Functional core — Phase 1]
-        State[Immutable BoardState]
-        Rules[MoveGenerator + GameEngine]
-        Projection[FogEngine.ProjectBoard]
-        AI[BotEngine + five BotProfiles]
-        Replay[Immutable move log + Replay]
-        State --> Rules
-        Rules --> State
-        State --> Projection
-        State --> AI
-        State --> Replay
-    end
-    Hub -->|authoritative moves| Rules
-    Projection -->|White masked view| Hub
-    Projection -->|Black masked view| Hub
-```
-
-### Slide 4 — Relevance and practical significance
-
-Fog chess makes hidden information part of the strategy. MistChess applies functional programming to a concrete security boundary: the client receives an immutable projection that contains no hidden piece data. The same rules can be replayed deterministically, while seeded bots make decisions reproducible during review and debugging.
-
-### Slide 5 — Methodology and evidence
-
-**Method:** Define immutable domain types → generate legal moves → apply validated moves with `Result` → project fog by viewer → run deterministic bot search → replay move history and verify invariants.
-
-**Current evidence:** 60 xUnit test cases passed on .NET SDK 8.0.428:
-
-```text
-Passed!  - Failed:     0, Passed:    60, Skipped:     0, Total:    60, Duration: 168 ms - MistChess.Tests.dll (net8.0)
-```
-
-![MistChess .NET test run: 60 passed, 0 failed](outputs/mistchess-test-evidence.svg)
-
-The image is a presentation graphic rendered from the successful command output, not a direct terminal screenshot.
-
-The cases cover move rules, castling, promotion, fog masking, replay, and all five bots. The Blazor board mockup and replay UI belong to the later web phase.
+1. **Aim and goals:** playable Fog of War chess; immutable rules, separate player visibility, bots, tests.
+2. **Technology and comparison:** C#/.NET 8, Blazor Server, SignalR, and comparison with Chess.com Fog of War.
+3. **Architecture:** functional core, per-player projection, authoritative online-room service.
+4. **Relevance:** hidden-information decision making, privacy, real-time play, and replay analysis.
+5. **Methodology and mockups:** responsive game board, online room entry, test results, and user workflow.
