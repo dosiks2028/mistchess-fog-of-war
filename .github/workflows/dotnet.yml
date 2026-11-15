@@ -23,3 +23,18 @@ jobs:
         run: dotnet test MistChess.sln --no-restore --configuration Release --verbosity minimal
       - name: Build deployment container
         run: docker build --file Dockerfile --tag mistchess-fog-of-war:ci .
+      - name: Smoke-test deployment container
+        run: |
+          docker run --detach --name mistchess-web -p 8080:8080 -e PORT=8080 mistchess-fog-of-war:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/health; then
+              curl --fail --silent http://127.0.0.1:8080/ > /dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs mistchess-web
+          exit 1
+      - name: Stop deployment container
+        if: always()
+        run: docker stop mistchess-web || true
