@@ -16,11 +16,11 @@ Open the local URL printed in the terminal (the included HTTP profile uses `http
 
 ## Public demo
 
-Create a public Render web service from this repository with the button below. The Blueprint selects Render's free web-service plan and the Frankfurt region.
+Deploy the public GitHub repository to Vercel with the button below. Vercel uses `Dockerfile.vercel` to build and run the .NET 8 Blazor application as a container.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fdosiks2028%2Fmistchess-fog-of-war-chess-signalr)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdosiks2028%2Fmistchess-fog-of-war-chess-signalr)
 
-Render sign-in and approval are required to create the service. Free web services can spin down after 15 minutes without traffic; the first visit after a spin-down may wait about a minute. Online rooms are in memory and are cleared when the service restarts.
+Sign in to Vercel, import the repository, and approve the deployment. Vercel will provide the public URL after the build completes. The container runtime supports real-time WebSocket connections, but it can recycle function instances and end long-running connections at its configured duration limit. This Blazor Server app keeps online rooms in process memory, so rooms can be lost on restart and cross-instance online play is not guaranteed. Bot games and local two-player games do not depend on shared online-room state.
 
 ## Browser screenshot
 

@@ -38,3 +38,20 @@ jobs:
       - name: Stop deployment container
         if: always()
         run: docker stop mistchess-web || true
+      - name: Build Vercel container
+        run: docker build --file Dockerfile.vercel --tag mistchess-fog-of-war:vercel-ci .
+      - name: Smoke-test Vercel container
+        run: |
+          docker run --detach --name mistchess-vercel-web -p 8081:80 -e PORT=80 mistchess-fog-of-war:vercel-ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8081/health; then
+              curl --fail --silent http://127.0.0.1:8081/ > /dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs mistchess-vercel-web
+          exit 1
+      - name: Stop Vercel container
+        if: always()
+        run: docker stop mistchess-vercel-web || true
