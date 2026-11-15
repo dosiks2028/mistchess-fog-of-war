@@ -17,7 +17,7 @@ public sealed class OnlineGameClient : IDisposable
     }
 
     public string ParticipantId { get; } = Guid.NewGuid().ToString("N");
-    public string PlayerName { get; set; } = "Игрок";
+    public string PlayerName { get; set; } = "Player";
     public string? RoomCode { get; private set; }
     public PlayerColor? Seat { get; private set; }
     public OnlineGameView? View { get; private set; }
@@ -31,7 +31,7 @@ public sealed class OnlineGameClient : IDisposable
             view.Variant)
         { IsOmniscient = view.Variant == GameVariant.ClassicChess }
         : null;
-    public string Message { get; private set; } = "Создайте комнату или введите код приглашения.";
+    public string Message { get; private set; } = "Create a room or enter an invite code.";
     public event Action? Changed;
 
     public RoomOperationResult CreateRoom(GameVariant variant)
@@ -52,7 +52,7 @@ public sealed class OnlineGameClient : IDisposable
     {
         if (RoomCode is null)
         {
-            return new RoomOperationResult(false, "Сначала войдите в комнату.");
+            return new RoomOperationResult(false, "Join a room first.");
         }
 
         var result = _registry.TryMove(ParticipantId, RoomCode, from, to, promotion);
@@ -68,7 +68,7 @@ public sealed class OnlineGameClient : IDisposable
         RoomCode = null;
         Seat = null;
         View = null;
-        Message = "Вы покинули комнату.";
+        Message = "You left the room.";
         NotifyChanged();
     }
 

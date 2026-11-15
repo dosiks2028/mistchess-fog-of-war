@@ -51,7 +51,7 @@ public sealed class GameSessionStore
     public bool IsFinished => _board.Status is not GameStatus.InProgress;
     public bool IsReplayAvailable => !_board.History.IsEmpty;
     public bool IsCheck => Variant == GameVariant.ClassicChess && MoveGenerator.IsInCheck(_board, _board.Turn);
-    public string Message { get; private set; } = "Выберите фигуру, чтобы увидеть допустимые ходы.";
+    public string Message { get; private set; } = "Select a piece to see its legal moves.";
     public ImmutableList<Move> History => _board.History;
     public ImmutableList<Move> LegalMoves => MoveGenerator.GetLegalMoves(_board, _board.Turn);
 
@@ -116,8 +116,8 @@ public sealed class GameSessionStore
         IsBotThinking = false;
         _botSeed = (ulong)Random.Shared.NextInt64();
         Message = mode == GameMode.Bot
-            ? $"Партия началась. Ваш цвет — {ColorName(humanColor)}."
-            : "Партия началась. Ход белых.";
+            ? $"Game started. You are playing {ColorName(humanColor)}."
+            : "Game started. White to move.";
         NotifyChanged();
     }
 
@@ -126,10 +126,10 @@ public sealed class GameSessionStore
         if (!CanInteract)
         {
             Message = _replayStep is not null
-                ? "Закройте просмотр партии, чтобы продолжить игру."
+                ? "Close the replay to continue playing."
                 : IsFinished
-                    ? "Партия завершена. Начните новую игру или откройте повтор."
-                    : "Подождите, пока бот сделает ход.";
+                    ? "Game over. Start a new game or review the replay."
+                    : "Wait for the bot to move.";
             NotifyChanged();
             return BoardAction.Rejected;
         }
@@ -140,12 +140,12 @@ public sealed class GameSessionStore
             if (view.At(square) is SquareVisibility.Visible { Piece: { } piece } && piece.Color == _board.Turn)
             {
                 _selected = square;
-                Message = $"Выбрана фигура на {square.Algebraic}. Выберите подсвеченную клетку.";
+                Message = $"Piece selected on {square.Algebraic}. Choose a highlighted square.";
                 NotifyChanged();
                 return BoardAction.Selected;
             }
 
-            Message = "Выберите свою видимую фигуру.";
+            Message = "Select one of your visible pieces.";
             NotifyChanged();
             return BoardAction.Rejected;
         }
@@ -153,7 +153,7 @@ public sealed class GameSessionStore
         if (_selected == square)
         {
             _selected = null;
-            Message = "Выбор отменён.";
+            Message = "Selection cleared.";
             NotifyChanged();
             return BoardAction.Deselected;
         }
@@ -161,7 +161,7 @@ public sealed class GameSessionStore
         if (view.At(square) is SquareVisibility.Visible { Piece: { } targetPiece } && targetPiece.Color == _board.Turn)
         {
             _selected = square;
-            Message = $"Выбрана фигура на {square.Algebraic}.";
+            Message = $"Piece selected on {square.Algebraic}.";
             NotifyChanged();
             return BoardAction.Selected;
         }
@@ -171,7 +171,7 @@ public sealed class GameSessionStore
             .ToImmutableArray();
         if (candidates.IsEmpty)
         {
-            Message = "Этот ход выполнить нельзя.";
+            Message = "That move is not legal.";
             NotifyChanged();
             return BoardAction.Rejected;
         }
@@ -181,7 +181,7 @@ public sealed class GameSessionStore
         {
             _promotionFrom = _selected;
             _promotionTo = square;
-            Message = "Выберите фигуру для превращения пешки.";
+            Message = "Choose a piece for pawn promotion.";
             NotifyChanged();
             return BoardAction.PromotionRequired;
         }
@@ -200,7 +200,7 @@ public sealed class GameSessionStore
             .FirstOrDefault(candidate => candidate.From == from && candidate.To == to && candidate.PromotedTo == promotedTo);
         if (move is null)
         {
-            Message = "Выбранный вариант превращения недоступен.";
+            Message = "That promotion choice is not available.";
             NotifyChanged();
             return false;
         }
@@ -219,7 +219,7 @@ public sealed class GameSessionStore
         var profile = Bot;
         var seed = _botSeed++;
         IsBotThinking = true;
-        Message = $"{profile.Name} оценивает позицию…";
+        Message = $"{profile.Name} is evaluating the position…";
         NotifyChanged();
 
         try
@@ -239,16 +239,16 @@ public sealed class GameSessionStore
 
             if (choice is Result<Move, BotError>.Ok ok)
             {
-                ApplyMove(ok.Value, prefix: $"{profile.Name} сыграл {MoveText.Format(ok.Value)}.");
+                ApplyMove(ok.Value, prefix: $"{profile.Name} played {MoveText.Format(ok.Value)}.");
             }
             else
             {
-                Message = "Бот не нашёл допустимый ход.";
+                Message = "The bot could not find a legal move.";
             }
         }
         catch (OperationCanceledException)
         {
-            Message = "Расчёт хода остановлен.";
+            Message = "Move calculation was cancelled.";
         }
         finally
         {
@@ -269,7 +269,7 @@ public sealed class GameSessionStore
         var replay = GameEngine.Replay(_initial, _board.History, keep);
         if (replay is not Result<BoardState, IllegalMoveError>.Ok ok)
         {
-            Message = "Ходы не удалось восстановить.";
+            Message = "Could not restore the previous position.";
             NotifyChanged();
             return false;
         }
@@ -278,7 +278,7 @@ public sealed class GameSessionStore
         RebuildCapturedPieces();
         _selected = null;
         _replayStep = null;
-        Message = "Последний ход отменён.";
+        Message = "Last move undone.";
         NotifyChanged();
         return true;
     }
@@ -289,14 +289,14 @@ public sealed class GameSessionStore
         {
             _replayStep = null;
             _selected = null;
-            Message = "Возвращены к текущей позиции.";
+            Message = "Returned to the current position.";
         }
         else
         {
             _replayStep = Math.Clamp(step.Value, 0, _board.History.Count);
             _replayPerspective = perspective;
             _selected = null;
-            Message = $"Повтор: ходов {_replayStep.Value}, обзор — {PerspectiveName(perspective)}.";
+            Message = $"Replay: move {_replayStep.Value}, view — {PerspectiveName(perspective)}.";
         }
 
         NotifyChanged();
@@ -306,7 +306,7 @@ public sealed class GameSessionStore
     {
         _promotionFrom = null;
         _promotionTo = null;
-        Message = "Превращение отменено. Выберите ход ещё раз.";
+        Message = "Promotion cancelled. Choose your move again.";
         NotifyChanged();
     }
 
@@ -315,15 +315,15 @@ public sealed class GameSessionStore
 
     public string TurnLabel => _board.Status switch
     {
-        GameStatus.Won { Winner: var winner } => $"Победили {ColorName(winner)}",
-        GameStatus.Draw { Reason: var reason } => $"Ничья: {DrawReasonName(reason)}",
-        _ when IsBotThinking => $"Ходит {Bot.Name}",
-        _ => $"Ход {ColorName(_board.Turn)}"
+        GameStatus.Won { Winner: var winner } => $"{ColorName(winner)} wins",
+        GameStatus.Draw { Reason: var reason } => $"Draw: {DrawReasonName(reason)}",
+        _ when IsBotThinking => $"{Bot.Name} is thinking",
+        _ => $"{ColorName(_board.Turn)} to move"
     };
 
     public string GameModeLabel => Mode == GameMode.Bot
-        ? $"Против бота · {Bot.Name}"
-        : "Два игрока · один экран";
+        ? $"Against bot · {Bot.Name}"
+        : "Two players · one screen";
 
     private bool ApplyMove(Move move, string? prefix = null)
     {
@@ -342,7 +342,7 @@ public sealed class GameSessionStore
         var applied = GameEngine.ApplyMove(_board, move);
         if (applied is not Result<BoardState, IllegalMoveError>.Ok ok)
         {
-            Message = "Этот ход больше недоступен. Выберите другую клетку.";
+            Message = "That move is no longer available. Choose another square.";
             NotifyChanged();
             return false;
         }
@@ -352,14 +352,14 @@ public sealed class GameSessionStore
         _promotionFrom = null;
         _promotionTo = null;
         _replayStep = null;
-        Message = prefix ?? $"Ход {MoveText.Format(move)} выполнен.";
+        Message = prefix ?? $"Move {MoveText.Format(move)} played.";
         if (_board.Status is GameStatus.Won { Winner: var winner })
         {
-            Message = $"Король захвачен. Победили {ColorName(winner)}.";
+            Message = $"King captured. {ColorName(winner)} wins.";
         }
         else if (_board.Status is GameStatus.Draw { Reason: var reason })
         {
-            Message = $"Партия завершилась вничью: {DrawReasonName(reason)}.";
+            Message = $"Game drawn: {DrawReasonName(reason)}.";
         }
 
         NotifyChanged();
@@ -410,22 +410,22 @@ public sealed class GameSessionStore
 
     private void NotifyChanged() => Changed?.Invoke();
 
-    public static string ColorName(PlayerColor color) => color == PlayerColor.White ? "белых" : "чёрных";
+    public static string ColorName(PlayerColor color) => color == PlayerColor.White ? "White" : "Black";
 
     public static string PerspectiveName(ReplayPerspective perspective) => perspective switch
     {
-        ReplayPerspective.WhiteFog => "туман белых",
-        ReplayPerspective.BlackFog => "туман чёрных",
-        ReplayPerspective.Omniscient => "полный обзор",
-        _ => "обзор"
+        ReplayPerspective.WhiteFog => "White's view",
+        ReplayPerspective.BlackFog => "Black's view",
+        ReplayPerspective.Omniscient => "full board",
+        _ => "board view"
     };
 
     private static string DrawReasonName(DrawReason reason) => reason switch
     {
-        DrawReason.Stalemate => "пат",
-        DrawReason.FiftyMoveRule => "правило 50 ходов",
-        DrawReason.InsufficientMaterial => "недостаточно материала",
-        _ => "правила игры"
+        DrawReason.Stalemate => "stalemate",
+        DrawReason.FiftyMoveRule => "50-move rule",
+        DrawReason.InsufficientMaterial => "insufficient material",
+        _ => "draw rules"
     };
 }
 

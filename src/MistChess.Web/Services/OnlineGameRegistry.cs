@@ -55,12 +55,12 @@ public sealed class OnlineGameRegistry
             PruneExpiredRooms();
             if (_participantRooms.ContainsKey(participantId))
             {
-                return new RoomOperationResult(false, "Вы уже находитесь в комнате.");
+                return new RoomOperationResult(false, "You are already in a room.");
             }
 
             if (_rooms.Count >= MaximumRooms)
             {
-                return new RoomOperationResult(false, "Сейчас создано слишком много комнат. Попробуйте позже.");
+                return new RoomOperationResult(false, "There are too many active rooms. Please try again later.");
             }
 
             var code = CreateCode();
@@ -73,7 +73,7 @@ public sealed class OnlineGameRegistry
         }
 
         Publish(updates);
-        return new RoomOperationResult(true, "Комната создана. Передайте код второму игроку.", room.Code, PlayerColor.White,
+        return new RoomOperationResult(true, "Room created. Share the code with another player.", room.Code, PlayerColor.White,
             View: view);
     }
 
@@ -83,7 +83,7 @@ public sealed class OnlineGameRegistry
         var normalizedCode = NormalizeCode(code);
         if (normalizedCode.Length != 8)
         {
-            return new RoomOperationResult(false, "Проверьте восьмизначный код комнаты.");
+            return new RoomOperationResult(false, "Enter a valid 8-character room code.");
         }
 
         Room room;
@@ -93,7 +93,7 @@ public sealed class OnlineGameRegistry
         {
             if (_participantRooms.ContainsKey(participantId))
             {
-                return new RoomOperationResult(false, "Вы уже находитесь в комнате.");
+                return new RoomOperationResult(false, "You are already in a room.");
             }
 
             if (!_rooms.TryGetValue(normalizedCode, out var foundRoom)
@@ -101,7 +101,7 @@ public sealed class OnlineGameRegistry
                 || foundRoom.BlackParticipantId is not null
                 || foundRoom.IsFinished)
             {
-                return new RoomOperationResult(false, "Комната не найдена или в ней уже есть второй игрок.");
+                return new RoomOperationResult(false, "Room not found or already full.");
             }
 
             room = foundRoom;
@@ -115,7 +115,7 @@ public sealed class OnlineGameRegistry
         }
 
         Publish(updates);
-        return new RoomOperationResult(true, "Вы вошли в комнату.", room.Code, PlayerColor.Black,
+        return new RoomOperationResult(true, "You joined the room.", room.Code, PlayerColor.Black,
             View: view);
     }
 
@@ -156,7 +156,7 @@ public sealed class OnlineGameRegistry
     {
         if (!from.IsOnBoard || !to.IsOnBoard)
         {
-            return new RoomOperationResult(false, "Этот ход не принят.");
+            return new RoomOperationResult(false, "Move rejected.");
         }
 
         var normalizedCode = NormalizeCode(code);
@@ -172,7 +172,7 @@ public sealed class OnlineGameRegistry
                 || room.BlackParticipantId is null
                 || room.Board.Turn != seat)
             {
-                return new RoomOperationResult(false, "Этот ход не принят.");
+                return new RoomOperationResult(false, "Move rejected.");
             }
 
             var candidates = MoveGenerator.GetLegalMoves(room.Board, seat)
@@ -180,7 +180,7 @@ public sealed class OnlineGameRegistry
                 .ToImmutableArray();
             if (candidates.IsEmpty)
             {
-                return new RoomOperationResult(false, "Этот ход не принят.");
+                return new RoomOperationResult(false, "Move rejected.");
             }
 
             Move move;
@@ -189,13 +189,13 @@ public sealed class OnlineGameRegistry
             {
                 if (promotion is null)
                 {
-                    return new RoomOperationResult(false, "Выберите фигуру для превращения.", room.Code, seat, NeedsPromotion: true);
+                    return new RoomOperationResult(false, "Choose a piece for promotion.", room.Code, seat, NeedsPromotion: true);
                 }
 
                 var selectedPromotion = promotions.FirstOrDefault(candidate => candidate.PromotedTo == promotion);
                 if (selectedPromotion is null)
                 {
-                    return new RoomOperationResult(false, "Этот ход не принят.");
+                    return new RoomOperationResult(false, "Move rejected.");
                 }
 
                 move = selectedPromotion;
@@ -207,13 +207,13 @@ public sealed class OnlineGameRegistry
 
             if (GameEngine.ApplyMove(room.Board, move) is not Result<BoardState, IllegalMoveError>.Ok applied)
             {
-                return new RoomOperationResult(false, "Этот ход не принят.");
+                return new RoomOperationResult(false, "Move rejected.");
             }
 
             room.Board = applied.Value;
             room.LastActivity = DateTimeOffset.UtcNow;
             updates = BuildUpdates(room);
-            result = new RoomOperationResult(true, "Ход принят.", room.Code, seat);
+            result = new RoomOperationResult(true, "Move accepted.", room.Code, seat);
         }
 
         Publish(updates);
@@ -325,12 +325,12 @@ public sealed class OnlineGameRegistry
         var isConnected = isWhite ? room.BlackConnected : room.WhiteConnected;
         var status = room.Board.Status switch
         {
-            GameStatus.Won { Winner: var winner } => winner == seat ? "Победа" : "Поражение",
-            GameStatus.Draw { } => "Ничья",
-            _ when !hasOpponent => "Ожидаем второго игрока",
-            _ when !isConnected => "Соперник временно отключён",
-            _ when room.Board.Turn == seat => "Ваш ход",
-            _ => "Ход соперника"
+            GameStatus.Won { Winner: var winner } => winner == seat ? "You won" : "You lost",
+            GameStatus.Draw { } => "Draw",
+            _ when !hasOpponent => "Waiting for opponent",
+            _ when !isConnected => "Opponent temporarily disconnected",
+            _ when room.Board.Turn == seat => "Your turn",
+            _ => "Opponent's turn"
         };
 
         return new OnlineGameView(
@@ -387,7 +387,7 @@ public sealed class OnlineGameRegistry
             .Where(character => !char.IsControl(character))
             .Take(24)
             .ToArray());
-        return string.IsNullOrWhiteSpace(cleaned) ? "Игрок" : cleaned;
+        return string.IsNullOrWhiteSpace(cleaned) ? "Player" : cleaned;
     }
 
     private static string NormalizeCode(string? code) =>

@@ -2,7 +2,7 @@
 @using MistChess.Core.Domain
 @using MistChess.Core.Engine
 
-<div class="chessboard" role="grid" aria-label="Шахматная доска">
+<div class="chessboard" role="grid" aria-label="Chess board">
     @for (var row = 0; row < 8; row++)
     {
         var rank = Orientation == PlayerColor.White ? 7 - row : row;
@@ -17,7 +17,7 @@
             var selected = Selected == position;
             var target = LegalTargets.Contains(position);
             var isLight = (file + rank) % 2 == 0;
-            var accessible = hidden ? $"{position.Algebraic}, скрыто туманом" : ripple ? $"{position.Algebraic}, звук шага" : $"{position.Algebraic}, {PieceName(piece)}";
+            var accessible = hidden ? $"{position.Algebraic}, hidden by fog" : ripple ? $"{position.Algebraic}, acoustic footstep" : $"{position.Algebraic}, {PieceName(piece)}";
             <button type="button"
                     class="square @(isLight ? "square-light" : "square-dark") @(hidden ? "square-hidden" : "") @(ripple ? "square-ripple" : "") @(selected ? "square-selected" : "") @(target ? "square-target" : "")"
                     role="gridcell"
@@ -70,5 +70,5 @@
         _ => "?"
     };
 
-    private static string PieceName(Piece? piece) => piece is null ? "пусто" : $"{piece.Color switch { PlayerColor.White => "белые", _ => "чёрные" }} {piece.Kind switch { PieceKind.King => "король", PieceKind.Queen => "ферзь", PieceKind.Rook => "ладья", PieceKind.Bishop => "слон", PieceKind.Knight => "конь", _ => "пешка" }}";
+    private static string PieceName(Piece? piece) => piece is null ? "empty" : $"{piece.Color switch { PlayerColor.White => "White", _ => "Black" }} {piece.Kind switch { PieceKind.King => "king", PieceKind.Queen => "queen", PieceKind.Rook => "rook", PieceKind.Bishop => "bishop", PieceKind.Knight => "knight", _ => "pawn" }}";
 }

@@ -3,20 +3,20 @@
 @implements IDisposable
 @inject GameSessionStore Session
 
-<PageTitle>MistChess — шахматы в тумане</PageTitle>
+<PageTitle>MistChess — Fog of War Chess</PageTitle>
 
 <div class="game-page">
     <section class="hero-row">
         <div>
-            <p class="eyebrow">ШАХМАТЫ С НЕПОЛНОЙ ИНФОРМАЦИЕЙ</p>
-            <h1>Сыграй на ощупь.</h1>
-            <p class="hero-copy">В тумане видны свои фигуры, их зона контроля и след последнего шага соперника.</p>
+            <p class="eyebrow">CHESS WITH INCOMPLETE INFORMATION</p>
+            <h1>Think beyond the visible.</h1>
+            <p class="hero-copy">In the fog, you can see your pieces, the squares they control, and traces of your opponent's latest move.</p>
         </div>
-        <div class="hero-stat"><span class="stat-dot"></span><span>Игровой движок .NET 8</span></div>
+        <div class="hero-stat"><span class="stat-dot"></span><span>Built on the .NET 8 game engine</span></div>
     </section>
 
     <div class="game-layout">
-        <section class="board-panel" aria-label="Игровая доска">
+        <section class="board-panel" aria-label="Game board">
             <div class="board-topline">
                 <div>
                     <span class="eyebrow">@Session.GameModeLabel</span>
@@ -37,66 +37,66 @@
 
         <aside class="control-panel">
             <div class="panel-section">
-                <div class="section-heading"><span class="eyebrow">НОВАЯ ПАРТИЯ</span><span class="section-number">01</span></div>
-                <label class="field-label" for="variant">Вариант</label>
+                <div class="section-heading"><span class="eyebrow">NEW GAME</span><span class="section-number">01</span></div>
+                <label class="field-label" for="variant">Variant</label>
                 <select id="variant" class="form-control mist-select" @bind="_variant">
                     <option value="FogOfWar">Fog of War</option>
-                    <option value="ClassicChess">Классические шахматы</option>
+                    <option value="ClassicChess">Classic Chess</option>
                 </select>
-                <label class="field-label" for="mode">Режим</label>
+                <label class="field-label" for="mode">Game mode</label>
                 <select id="mode" class="form-control mist-select" @bind="_mode">
-                    <option value="Bot">Против бота</option>
-                    <option value="LocalTwoPlayer">Два игрока за одним экраном</option>
+                    <option value="Bot">Play against a bot</option>
+                    <option value="LocalTwoPlayer">Two players, one screen</option>
                 </select>
                 @if (_mode == GameMode.Bot)
                 {
-                    <label class="field-label" for="bot">Соперник</label>
+                    <label class="field-label" for="bot">Opponent</label>
                     <select id="bot" class="form-control mist-select" @bind="_botId">
                         @foreach (var bot in BotProfiles.All)
                         {
                             <option value="@bot.Id">@bot.Name · @bot.Title</option>
                         }
                     </select>
-                    <label class="field-label" for="color">Ваш цвет</label>
+                    <label class="field-label" for="color">Your color</label>
                     <select id="color" class="form-control mist-select" @bind="_humanColor">
-                        <option value="White">Белые</option>
-                        <option value="Black">Чёрные</option>
+                        <option value="White">White</option>
+                        <option value="Black">Black</option>
                     </select>
                 }
-                <button type="button" class="primary-button full-button" @onclick="StartGame">Начать партию <span>↗</span></button>
+                <button type="button" class="primary-button full-button" @onclick="StartGame">Start game <span>↗</span></button>
             </div>
 
             <div class="panel-section tools-section">
-                <div class="section-heading"><span class="eyebrow">ИНСТРУМЕНТЫ</span><span class="section-number">02</span></div>
+                <div class="section-heading"><span class="eyebrow">TOOLS</span><span class="section-number">02</span></div>
                 <div class="tool-row">
-                    <button type="button" class="secondary-button" @onclick="Undo" disabled="@(Session.Board.History.IsEmpty || Session.IsBotThinking)">↶ Отменить ход</button>
-                    <button type="button" class="secondary-button icon-button" @onclick="ToggleReplay" disabled="@(!Session.IsReplayAvailable)">⏱ Повтор</button>
+                    <button type="button" class="secondary-button" @onclick="Undo" disabled="@(Session.Board.History.IsEmpty || Session.IsBotThinking)">↶ Undo move</button>
+                    <button type="button" class="secondary-button icon-button" @onclick="ToggleReplay" disabled="@(!Session.IsReplayAvailable)">⏱ Replay</button>
                 </div>
                 @if (Session.ReplayStep is not null)
                 {
-                    <label class="field-label" for="replay">Позиция в партии · @Session.ReplayStep / @Session.Board.History.Count</label>
+                    <label class="field-label" for="replay">Move in game · @Session.ReplayStep / @Session.Board.History.Count</label>
                     <input id="replay" class="timeline" type="range" min="0" max="@Session.Board.History.Count" value="@Session.ReplayStep" @oninput="ReplayChanged" />
-                    <select class="form-control mist-select" aria-label="Перспектива повтора" value="@Session.ReplayPerspective" @onchange="ReplayPerspectiveChanged">
-                        <option value="WhiteFog">Туман белых</option>
-                        <option value="BlackFog">Туман чёрных</option>
-                        <option value="Omniscient">Полный обзор</option>
+                    <select class="form-control mist-select" aria-label="Replay perspective" value="@Session.ReplayPerspective" @onchange="ReplayPerspectiveChanged">
+                        <option value="WhiteFog">White's view</option>
+                        <option value="BlackFog">Black's view</option>
+                        <option value="Omniscient">Full board</option>
                     </select>
-                    <button type="button" class="text-button" @onclick="CloseReplay">Вернуться к партии</button>
+                    <button type="button" class="text-button" @onclick="CloseReplay">Return to game</button>
                 }
             </div>
 
             <div class="panel-section captured-section">
-                <div class="section-heading"><span class="eyebrow">ВЗЯТЫЕ ФИГУРЫ</span><span class="section-number">03</span></div>
-                <div class="captured-line"><span>Белые взяли</span><span class="captured-pieces">@CapturedGlyphs(PlayerColor.White)</span></div>
-                <div class="captured-line"><span>Чёрные взяли</span><span class="captured-pieces">@CapturedGlyphs(PlayerColor.Black)</span></div>
+                <div class="section-heading"><span class="eyebrow">CAPTURED PIECES</span><span class="section-number">03</span></div>
+                <div class="captured-line"><span>Captured by White</span><span class="captured-pieces">@CapturedGlyphs(PlayerColor.White)</span></div>
+                <div class="captured-line"><span>Captured by Black</span><span class="captured-pieces">@CapturedGlyphs(PlayerColor.Black)</span></div>
             </div>
 
             <div class="panel-section history-section">
-                <div class="section-heading"><span class="eyebrow">ЗАПИСЬ ПАРТИИ</span><span class="section-number">04</span></div>
-                <div class="move-list" aria-label="История ходов">
+                <div class="section-heading"><span class="eyebrow">MOVE HISTORY</span><span class="section-number">04</span></div>
+                <div class="move-list" aria-label="Move history">
                     @if (Session.History.IsEmpty)
                     {
-                        <p class="empty-note">Ходы появятся здесь после начала партии.</p>
+                        <p class="empty-note">Moves will appear here once the game starts.</p>
                     }
                     else
                     {
@@ -113,10 +113,10 @@
         </aside>
     </div>
 
-    <section class="feature-strip" aria-label="Особенности Fog of War">
-        <article><span class="feature-symbol">◉</span><div><h3>King Radar</h3><p>Обзор пять на пять вокруг короля помогает ориентироваться в тумане.</p></div></article>
-        <article><span class="feature-symbol">≈</span><div><h3>Acoustic Footsteps</h3><p>Недавний шаг рядом оставляет звуковую рябь, не раскрывая фигуру.</p></div></article>
-        <article><span class="feature-symbol">⟲</span><div><h3>Повтор партии</h3><p>Переключайтесь между перспективами обоих игроков и полным обзором.</p></div></article>
+    <section class="feature-strip" aria-label="Fog of War features">
+        <article><span class="feature-symbol">◉</span><div><h3>King Radar</h3><p>A five-by-five view around your king helps you navigate the fog.</p></div></article>
+        <article><span class="feature-symbol">≈</span><div><h3>Acoustic Footsteps</h3><p>A nearby move leaves a sound ripple without revealing the piece.</p></div></article>
+        <article><span class="feature-symbol">⟲</span><div><h3>Time-Travel Replay</h3><p>Review the game from either player's perspective or reveal the full board.</p></div></article>
     </section>
 </div>
 
