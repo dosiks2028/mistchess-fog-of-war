@@ -12,7 +12,15 @@ Install the .NET 8 SDK, clone this repository, then run:
 dotnet run --project src/MistChess.Web
 ```
 
-Open the local URL printed in the terminal (the included HTTP profile uses `http://localhost:5254`). The home screen supports games against all five bots and two players sharing one screen. Use the **Online** page to create a room, send the eight-character code to another player, and play through the Blazor Interactive Server connection. The repository is public, but it does not currently have a public hosted game URL; run the app locally to play.
+Open the local URL printed in the terminal (the included HTTP profile uses `http://localhost:5254`). The home screen supports games against all five bots and two players sharing one screen. Use the **Online** page to create a room, send the eight-character code to another player, and play through the Blazor Interactive Server connection.
+
+## Public demo
+
+Create a public Render web service from this repository with the button below. The Blueprint selects Render's free web-service plan and the Frankfurt region.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fdosiks2028%2Fmistchess-fog-of-war-chess-signalr)
+
+Render sign-in and approval are required to create the service. Free web services can spin down after 15 minutes without traffic; the first visit after a spin-down may wait about a minute. Online rooms are in memory and are cleared when the service restarts.
 
 ## Browser screenshot
 

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: mistchess-fog-of-war
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: off
