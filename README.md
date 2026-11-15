@@ -14,6 +14,12 @@ dotnet run --project src/MistChess.Web
 
 Open the local URL printed in the terminal (the included HTTP profile uses `http://localhost:5254`). The home screen supports games against all five bots and two players sharing one screen. Use the **Online** page to create a room, send the eight-character code to another player, and play through the Blazor Interactive Server connection. The repository is public, but it does not currently have a public hosted game URL; run the app locally to play.
 
+## Browser screenshot
+
+This is a live browser capture of the implemented game after the first move and bot reply:
+
+![MistChess Fog of War game running in a browser](docs/mistchess-game.png)
+
 Run the automated test suite with:
 
 ```powershell
