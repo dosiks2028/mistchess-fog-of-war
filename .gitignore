@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/TestResults/
+.vs/
+.codex-finalizer/
+work/
+outputs/*.pptx

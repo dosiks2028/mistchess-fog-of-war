@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">MistChess Phase 1 automated test results</title>
+  <desc id="desc">A presentation graphic showing the actual dotnet test command and output: 60 passed, 0 failed, 0 skipped, in 168 milliseconds on .NET 8.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101c2b"/>
+      <stop offset="1" stop-color="#16324a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#63d6a5"/>
+      <stop offset="1" stop-color="#43b982"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1450" cy="80" r="260" fill="#25445a" opacity=".22"/>
+  <circle cx="120" cy="820" r="300" fill="#1b6954" opacity=".12"/>
+
+  <text x="112" y="108" fill="#8fa6b9" font-family="Segoe UI, Arial, sans-serif" font-size="22" letter-spacing="4">MISTCHESS  /  PHASE 1</text>
+  <text x="112" y="188" fill="#f3f7fa" font-family="Segoe UI, Arial, sans-serif" font-size="54" font-weight="600">Automated test results</text>
+  <text x="112" y="235" fill="#a9bac8" font-family="Segoe UI, Arial, sans-serif" font-size="25">.NET 8  ·  MistChess.Core  ·  xUnit</text>
+
+  <rect x="112" y="294" width="1376" height="500" rx="22" fill="#0b1119" stroke="#344656" stroke-width="2"/>
+  <path d="M134 294h1332a22 22 0 0 1 22 22v48H112v-48a22 22 0 0 1 22-22z" fill="#202d3a"/>
+  <rect x="141" y="314" width="34" height="31" rx="4" fill="#0878c9"/>
+  <text x="147" y="337" fill="#ffffff" font-family="Consolas, 'Courier New', monospace" font-size="18" font-weight="600">&gt;_</text>
+  <text x="190" y="338" fill="#e0e8ef" font-family="Segoe UI, Arial, sans-serif" font-size="20">Windows PowerShell</text>
+  <text x="1360" y="338" fill="#d5dee6" font-family="Segoe UI, Arial, sans-serif" font-size="20">—　□　×</text>
+
+  <text x="154" y="412" fill="#7f96a9" font-family="Consolas, 'Courier New', monospace" font-size="21">PS C:\...\3-fog-of-war-chess-signalr&gt;</text>
+  <text x="154" y="455" fill="#d5e0e8" font-family="Consolas, 'Courier New', monospace" font-size="19">.\work\dotnet8\dotnet.exe test .\MistChess.sln --no-restore --verbosity minimal</text>
+  <text x="154" y="515" fill="#aebdca" font-family="Consolas, 'Courier New', monospace" font-size="20">Пройдено!  Ошибок: 0, пройдено: 60, пропущено: 0, всего: 60</text>
+  <text x="154" y="550" fill="#aebdca" font-family="Consolas, 'Courier New', monospace" font-size="20">Длительность: 168 ms - MistChess.Tests.dll (net8.0)</text>
+
+  <rect x="154" y="587" width="1292" height="2" fill="#263543"/>
+  <circle cx="171" cy="648" r="17" fill="#163d32"/>
+  <path d="m163 648 6 6 11-13" fill="none" stroke="url(#accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="207" y="659" fill="#67d8a4" font-family="Segoe UI, Arial, sans-serif" font-size="35" font-weight="600">All tests passed</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle">
+    <text x="400" y="728" fill="#f2f7fa" font-size="37" font-weight="600">60</text>
+    <text x="400" y="757" fill="#91a5b5" font-size="18" letter-spacing="1.5">PASSED</text>
+    <text x="800" y="728" fill="#f2f7fa" font-size="37" font-weight="600">0</text>
+    <text x="800" y="757" fill="#91a5b5" font-size="18" letter-spacing="1.5">FAILED</text>
+    <text x="1200" y="728" fill="#f2f7fa" font-size="37" font-weight="600">168 ms</text>
+    <text x="1200" y="757" fill="#91a5b5" font-size="18" letter-spacing="1.5">TEST DURATION</text>
+  </g>
+
+  <text x="112" y="837" fill="#8297a8" font-family="Segoe UI, Arial, sans-serif" font-size="18">PowerShell-style presentation graphic based on the successful CLI output; not a direct screenshot.</text>
+  <rect x="112" y="866" width="1376" height="4" rx="2" fill="url(#accent)" opacity=".85"/>
+</svg>
