@@ -26,7 +26,7 @@ The container runtime supports real-time WebSocket connections, but it can recyc
 
 ## Browser screenshot
 
-This is a live browser capture of the implemented game after the first move and bot reply:
+This is a live browser capture of the deployed English interface at the initial Fog of War position:
 
 ![MistChess Fog of War game running in a browser](docs/mistchess-game.png)
 

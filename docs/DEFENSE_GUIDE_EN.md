@@ -9,7 +9,7 @@
 | 5–8 min | Architecture | Trace a move from the UI to `GameSessionStore` or `OnlineGameClient`, through `MistChess.Core`, then back as a player-specific board view. |
 | 8–10 min | Practical value | Show King Radar, Acoustic Footsteps, and replay from White Fog, Black Fog, and omniscient perspectives. |
 | 10–14 min | Live demo | Start a bot game, make a move, show the bot response and fog boundary, then create and join an online room in a second browser session and exchange a legal move. |
-| 14–16 min | Method and evidence | Run the tests or show the latest verified result: 67 passed, 0 failed. Explain the focused desktop, two-session online, and 390 px viewport smoke checks. |
+| 14–16 min | Method and evidence | Run the tests or show the latest verified result: 67 passed, 0 failed, 0 skipped. The slide uses an editable results summary, not an old terminal screenshot. Explain the focused desktop, two-session online, and 390 px viewport smoke checks. |
 | 16–20 min | Questions | Both team members should be ready to explain the core rules, fog projection, UI state, and online room validation. |
 
 ## Live demo commands
@@ -34,7 +34,7 @@ To repeat the automated checks:
 dotnet test .\MistChess.sln
 ```
 
-The last verified run used .NET SDK 8.0.428 and passed 67 tests. The PowerShell image in the presentation is an unmodified earlier run showing 60 tests; it is labeled as historical evidence. The current 67-test result was checked separately in the terminal.
+The latest verified solution-wide run used .NET SDK 8.0.428 and passed 67 tests with 0 failures and 0 skipped. Slide 5 shows an editable summary of that run instead of a terminal screenshot. The screenshot on slide 4 is a live capture of the English-language deployed interface.
 
 ## Questions to rehearse
 
@@ -66,6 +66,10 @@ They use different evaluation styles and search depths. Their choices are based 
 
 `OnlineGameRegistry` checks room membership, whose turn it is, and the legal move set against the server-held board before applying a move. Each participant then receives a separately projected view.
 
+### How is the app hosted?
+
+Vercel builds and runs the .NET 8 Blazor app as a container using `Dockerfile.vercel`. Blazor Interactive Server uses SignalR over WebSockets. Online rooms are held in process memory for one server instance, so a restart or recycle can end connections and clear rooms; shared play across multiple instances is not guaranteed.
+
 ### What happens if the server restarts?
 
 Current online rooms are held in memory and are lost when the host restarts. Persistent storage, authentication, and production abuse controls are outside this classroom demo's implemented scope.
@@ -76,8 +80,8 @@ The xUnit suite has 67 tests. A separate manual browser check exercised a bot mo
 
 ## Keep the claims precise
 
-- The source is available at [github.com/dosiks2028/mistchess-fog-of-war](https://github.com/dosiks2028/mistchess-fog-of-war).
-- There is no public hosted game URL yet; the current way to play is to run the app locally.
+- The source is at [github.com/dosiks2028/mistchess-fog-of-war](https://github.com/dosiks2028/mistchess-fog-of-war); the live English-language game is at [mistchess-fog-of-war.vercel.app](https://mistchess-fog-of-war.vercel.app).
+- Vercel hosts the .NET 8 container from `Dockerfile.vercel`; SignalR uses WebSockets. The current online-room registry is in-memory and single-process, so a restart can clear rooms and multi-instance room sharing is not guaranteed.
 - The comparison describes only the cited public Chess.com help articles, not Chess.com's private implementation.
 - Do not describe the room registry as persistent or multi-server. It is currently in-memory and single-process.
 - Be prepared for either author to answer questions about any project area.

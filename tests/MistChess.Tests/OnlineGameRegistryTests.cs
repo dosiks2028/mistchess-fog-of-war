@@ -82,7 +82,7 @@ public sealed class OnlineGameRegistryTests
         registry.LeaveRoom("black-player");
 
         Assert.True(whiteViews[^1].IsFinished);
-        Assert.Equal("Победа", whiteViews[^1].Status);
+        Assert.Equal("You won", whiteViews[^1].Status);
         Assert.False(whiteViews[^1].IsOpponentConnected);
     }
 }
