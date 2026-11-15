@@ -16,11 +16,13 @@ Open the local URL printed in the terminal (the included HTTP profile uses `http
 
 ## Public demo
 
-Deploy the public GitHub repository to Vercel with the button below. Vercel uses `Dockerfile.vercel` to build and run the .NET 8 Blazor application as a container.
+**Play the live game:** [mistchess-fog-of-war.vercel.app](https://mistchess-fog-of-war.vercel.app)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdosiks2028%2Fmistchess-fog-of-war-chess-signalr)
+The public GitHub repository is deployed to Vercel. Vercel uses `Dockerfile.vercel` to build and run the .NET 8 Blazor application as a container. Use the button below if you want to create a separate deployment under another Vercel team.
 
-Sign in to Vercel, import the repository, and approve the deployment. Vercel will provide the public URL after the build completes. The container runtime supports real-time WebSocket connections, but it can recycle function instances and end long-running connections at its configured duration limit. This Blazor Server app keeps online rooms in process memory, so rooms can be lost on restart and cross-instance online play is not guaranteed. Bot games and local two-player games do not depend on shared online-room state.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdosiks2028%2Fmistchess-fog-of-war)
+
+The container runtime supports real-time WebSocket connections, but it can recycle function instances and end long-running connections at its configured duration limit. This Blazor Server app keeps online rooms in process memory, so rooms can be lost on restart and cross-instance online play is not guaranteed. Bot games and local two-player games do not depend on shared online-room state.
 
 ## Browser screenshot
 
